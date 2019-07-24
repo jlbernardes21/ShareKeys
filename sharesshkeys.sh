@@ -1,7 +1,8 @@
 #!/bin/bash
 # sharekeys.sh - Shell script to share ssh keys between nodes in RAC installation
 # Author: Joao Bernardes - https://www.linkedin.com/in/jlbernardes/
-# Usage: Define your password to 'orcltoshare' in all users and all nodes and run this script.
+# Usage: Needs to be executed in each node. Create a ssh key to all oracle users, and share with all others in all nodes.
+#        Important: Define your password to 'orcltoshare' in all users and all nodes and run this script.
 #        After the sucessfull execution, the password can be safelly reseted. 
 
 # Basic vars
@@ -85,34 +86,22 @@ if [ $? -ne 0 ]; then
 fi
 
 # Defining $_SSHPASS
-_SSHPASS="sshpass -p $PASSWORD ssh -o StrictHostKeyChecking=no "
+_SSHPASS="sshpass -p $PASSWORD"
+_SSH="$_SSHPASS ssh -o StrictHostKeyChecking=no "
 
 # Creating Keys
-for n in "${NODES[@]}"; do
-  for u in "${USERS[@]}"; do 
-    echo " > Executando a criação de chave para $u@$n"
-    $_SSHPASS $u@$n ssh-keygen -b 2048 -t rsa -q -N ""
-    $_SSHPASS $u@$n
+for us in "${USERS[@]}"; do 
+    echo " > Executando a criação de chave para o usuário $us"
+    $_SSH $u@$HOSTNAME ssh-keygen -b 2048 -t rsa -q -N ""
   done
 done
 
-
-
-# Sharing Keys
-
-
-
-#for i in ${NODES[@]}; do
-#  ssh $i ssh-keygen (parametros pra gerar autmoaticamente RSA e DSA) 
-#  for i in ${NODES[@]}; do
-#    for j in ${USERS[@]}; do
-#      sshpass <params apropriados> ssh-copy-id $j@$i
-#      ssh $j@$i echo
-#    done
-#  done  
-#done
-#echo ${NODES[@]}
-#echo ${USERS[@]}
+# Sharing keys
+for n in "${NODES[@]}"; do
+  for u in "${USERS[@]}"; do 
+    $_SSHPASS ssh-copy-id -o StrictHostKeyChecking=no $u@$n
+  done
+done
 
 echo "Do you want to remove the SSHPASS package? [y/N]" && read REMOVE
 if [ -z "$REMOVE" ] || [ "$REMOVE" == "N" ] || [ "$REMOVE" == "n" ]; then
